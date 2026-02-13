@@ -64,6 +64,7 @@ h1 {
 .config-item input,
 .config-item select {
     flex: 1;
+    min-width: 0;
     padding: 6px 8px;
     border: 1px solid #ddd;
     border-radius: 3px;
@@ -228,7 +229,7 @@ h1 {
     border-color: #ff7043;
 }
 
-.day:not(.empty):not(.weekend):hover {
+.day:not(.empty):not(.weekend):not(.reduced):hover {
     border-color: #999;
 }
 
