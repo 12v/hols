@@ -224,7 +224,7 @@ function initializeInputs() {
     weekTypeInput.value = state.weekType;
 
     function updateWeekTypeVisibility() {
-        if (state.reducedHoursDay) {
+        if (reducedDayInput.value) {
             weekTypeContainer.classList.remove('hidden');
         } else {
             weekTypeContainer.classList.add('hidden');

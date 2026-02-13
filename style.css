@@ -4,7 +4,7 @@
     box-sizing: border-box;
 }
 
-.hidden {
+.config-item.hidden {
     display: none;
 }
 
@@ -247,6 +247,11 @@ h1 {
     .config-row {
         flex-direction: column;
         gap: 10px;
+    }
+
+    .config-item input,
+    .config-item select {
+        max-width: 200px;
     }
 }
 
