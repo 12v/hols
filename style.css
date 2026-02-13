@@ -79,6 +79,9 @@ h1 {
     border-radius: 4px;
     margin-bottom: 20px;
     font-size: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .summary-item {
