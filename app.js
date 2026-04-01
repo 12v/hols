@@ -3,7 +3,9 @@ const STORAGE_KEY = 'holidayPlannerData';
 let state = {
     yearResetDate: new Date().getFullYear() + '-01-01',
     holidayAllowance: 25,
+    carryOver: 0,
     reducedHoursDay: null,
+    dayOffStart: null,
     weekType: 'odd',
     holidays: [],
     blockedDates: []
@@ -36,17 +38,21 @@ function isWeekend(date) {
     return day === 0 || day === 6;
 }
 
-function getWeekNumber(date, resetDate) {
-    const diffMs = date - resetDate;
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+function getWeekNumber(date, startDate) {
+    const startUtc = Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+    const dateUtc = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+    const diffDays = Math.round((dateUtc - startUtc) / (1000 * 60 * 60 * 24));
     return Math.floor(diffDays / 7) + 1;
 }
 
 function isReducedHoursDay(date) {
     if (!state.reducedHoursDay) return false;
 
-    const resetDate = parseDate(state.yearResetDate);
-    const weekNum = getWeekNumber(date, resetDate);
+    const startDate = state.dayOffStart ? parseDate(state.dayOffStart) : parseDate(state.yearResetDate);
+
+    if (date < startDate) return false;
+
+    const weekNum = getWeekNumber(date, startDate);
     const isOddWeek = weekNum % 2 === 1;
     const matchesWeekType = state.weekType === 'odd' ? isOddWeek : !isOddWeek;
 
@@ -59,9 +65,10 @@ function calculateDaysTaken() {
 
 function updateSummary() {
     const taken = calculateDaysTaken();
-    const remaining = state.holidayAllowance - taken;
+    const totalAllowance = state.holidayAllowance + state.carryOver;
+    const remaining = totalAllowance - taken;
 
-    document.getElementById('totalAllowance').textContent = state.holidayAllowance;
+    document.getElementById('totalAllowance').textContent = totalAllowance;
     document.getElementById('daysTaken').textContent = taken;
 
     const remainingEl = document.getElementById('daysRemaining');
@@ -87,7 +94,7 @@ function renderMonth(year, month) {
     monthEl.className = 'month';
 
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                        'July', 'August', 'September', 'October', 'November', 'December'];
+        'July', 'August', 'September', 'October', 'November', 'December'];
 
     const headerEl = document.createElement('div');
     headerEl.className = 'month-header';
@@ -214,24 +221,31 @@ function renderCalendar() {
 function initializeInputs() {
     const resetDateInput = document.getElementById('resetDate');
     const allowanceInput = document.getElementById('allowance');
+    const carryOverInput = document.getElementById('carryOver');
     const reducedDayInput = document.getElementById('reducedDay');
+    const dayOffStartInput = document.getElementById('dayOffStart');
+    const dayOffStartContainer = document.getElementById('dayOffStartContainer');
     const weekTypeInput = document.getElementById('weekType');
     const weekTypeContainer = document.getElementById('weekTypeContainer');
 
     resetDateInput.value = state.yearResetDate;
     allowanceInput.value = state.holidayAllowance;
+    carryOverInput.value = state.carryOver;
     reducedDayInput.value = state.reducedHoursDay || '';
+    dayOffStartInput.value = state.dayOffStart || '';
     weekTypeInput.value = state.weekType;
 
-    function updateWeekTypeVisibility() {
+    function updateDayOffFieldsVisibility() {
         if (reducedDayInput.value) {
+            dayOffStartContainer.classList.remove('hidden');
             weekTypeContainer.classList.remove('hidden');
         } else {
+            dayOffStartContainer.classList.add('hidden');
             weekTypeContainer.classList.add('hidden');
         }
     }
 
-    updateWeekTypeVisibility();
+    updateDayOffFieldsVisibility();
 
     resetDateInput.addEventListener('change', (e) => {
         state.yearResetDate = e.target.value;
@@ -246,9 +260,22 @@ function initializeInputs() {
         updateSummary();
     });
 
+    carryOverInput.addEventListener('change', (e) => {
+        state.carryOver = parseFloat(e.target.value) || 0;
+        saveState();
+        updateSummary();
+    });
+
     reducedDayInput.addEventListener('change', (e) => {
         state.reducedHoursDay = e.target.value || null;
-        updateWeekTypeVisibility();
+        updateDayOffFieldsVisibility();
+        saveState();
+        renderCalendar();
+        updateSummary();
+    });
+
+    dayOffStartInput.addEventListener('change', (e) => {
+        state.dayOffStart = e.target.value || null;
         saveState();
         renderCalendar();
         updateSummary();
